@@ -30,6 +30,7 @@ class Content {
   final String categoryName;
   final int authorId;
   final String authorName;
+  final String? authorRole;
   final ContentStatus status;
   final String statusText;
   final int views;
@@ -47,6 +48,7 @@ class Content {
     required this.categoryName,
     required this.authorId,
     required this.authorName,
+    this.authorRole,
     required this.status,
     required this.statusText,
     this.views = 0,
@@ -67,6 +69,9 @@ class Content {
       categoryName: json['category_name'] ?? '',
       authorId: json['author_id'] ?? 0,
       authorName: json['author_name'] ?? '',
+      authorRole: json['author_role']?.toString() ??
+          json['author_role_name']?.toString() ??
+          json['authorRole']?.toString(),
       status: status,
       statusText: json['status_text'] ?? status.displayName,
       views: json['views'] ?? 0,
@@ -88,6 +93,7 @@ class Content {
       'category_name': categoryName,
       'author_id': authorId,
       'author_name': authorName,
+      'author_role': authorRole,
       'status': status.value,
       'status_text': statusText,
       'views': views,

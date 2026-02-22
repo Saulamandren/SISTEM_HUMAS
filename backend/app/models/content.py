@@ -161,17 +161,28 @@ class Content:
         finally:
             self._close_db_connection()
     
-    def update_content(self, content_id, title, excerpt, body, category_id, featured_image=None):
+    def update_content(self, content_id, title, excerpt, body, category_id, featured_image=None, reset_status=False):
         """Update content"""
         try:
             self._get_db_connection()
-            
-            query = """
-                UPDATE contents
-                SET title = %s, excerpt = %s, body = %s, category_id = %s, featured_image = %s
-                WHERE id = %s
-            """
-            self.cursor.execute(query, (title, excerpt, body, category_id, featured_image, content_id))
+
+            if reset_status:
+                query = """
+                    UPDATE contents
+                    SET title = %s, excerpt = %s, body = %s, category_id = %s, featured_image = %s,
+                        status = 'draft', published_at = NULL
+                    WHERE id = %s
+                """
+                params = (title, excerpt, body, category_id, featured_image, content_id)
+            else:
+                query = """
+                    UPDATE contents
+                    SET title = %s, excerpt = %s, body = %s, category_id = %s, featured_image = %s
+                    WHERE id = %s
+                """
+                params = (title, excerpt, body, category_id, featured_image, content_id)
+
+            self.cursor.execute(query, params)
             self.conn.commit()
             
             if self.cursor.rowcount == 0:
@@ -264,9 +275,9 @@ class Content:
             self._get_db_connection()
             
             query = """
-                SELECT ca.*, u.full_name as approver_name
+                SELECT ca.*, COALESCE(u.full_name, ca.approver_role) as approver_name
                 FROM content_approvals ca
-                JOIN users u ON ca.approver_id = u.id
+                LEFT JOIN users u ON ca.approver_id = u.id
                 WHERE ca.content_id = %s
                 ORDER BY ca.created_at DESC
             """
@@ -285,12 +296,25 @@ class Content:
         try:
             self._get_db_connection()
 
+            last_submit_query = """
+                SELECT MAX(created_at) AS last_submit
+                FROM content_approvals
+                WHERE content_id = %s AND action = 'submit'
+            """
+            self.cursor.execute(last_submit_query, (content_id,))
+            last_submit = self.cursor.fetchone()['last_submit']
+
+            if not last_submit:
+                return {'success': True, 'roles': []}
+
             query = """
                 SELECT DISTINCT approver_role
                 FROM content_approvals
-                WHERE content_id = %s AND action = 'approve'
+                WHERE content_id = %s
+                  AND action = 'approve'
+                  AND created_at >= %s
             """
-            self.cursor.execute(query, (content_id,))
+            self.cursor.execute(query, (content_id, last_submit))
             roles = [row['approver_role'] for row in self.cursor.fetchall()]
 
             return {'success': True, 'roles': roles}

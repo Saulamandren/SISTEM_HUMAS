@@ -66,7 +66,7 @@ class _ContentDetailScreenState extends State<ContentDetailScreen> {
     final contentProvider = context.read<ContentProvider>();
     final response = await contentProvider.approveContent(
       widget.contentId,
-      notes: notes.isNotEmpty ? notes : null,
+      notes: notes,
     );
 
     setState(() => _isLoading = false);
@@ -88,7 +88,7 @@ class _ContentDetailScreenState extends State<ContentDetailScreen> {
     final contentProvider = context.read<ContentProvider>();
     final response = await contentProvider.publishContent(
       widget.contentId,
-      notes: notes.isNotEmpty ? notes : null,
+      notes: notes,
     );
 
     setState(() => _isLoading = false);
@@ -268,13 +268,26 @@ class _ContentDetailScreenState extends State<ContentDetailScreen> {
     );
   }
 
+  DateTime? _getLatestSubmitAt(List<ContentApproval> history) {
+    DateTime? latest;
+    for (final item in history) {
+      if (item.action.toLowerCase() != 'submit') continue;
+      if (latest == null || item.createdAt.isAfter(latest)) {
+        latest = item.createdAt;
+      }
+    }
+    return latest;
+  }
+
   String? _getLatestActionForRole(
     List<ContentApproval> history,
-    String role,
-  ) {
+    String role, {
+    DateTime? since,
+  }) {
     ContentApproval? latest;
     for (final item in history) {
       if (item.approverRole != role) continue;
+      if (since != null && item.createdAt.isBefore(since)) continue;
       if (latest == null || item.createdAt.isAfter(latest.createdAt)) {
         latest = item;
       }
@@ -300,11 +313,14 @@ class _ContentDetailScreenState extends State<ContentDetailScreen> {
     final isAuthor = user?.id == content.authorId;
     final isStaff = user?.role == 'Staff Jashumas';
     final isKasubbag = user?.role == 'Kasubbag Jashumas';
-    final staffLatestAction =
-        _getLatestActionForRole(approvalHistory, 'Staff Jashumas');
-    final kasubbagLatestAction =
-        _getLatestActionForRole(approvalHistory, 'Kasubbag Jashumas');
-    final staffAccepted = staffLatestAction == 'approve';
+    final authorRole = content.authorRole?.toLowerCase();
+    final isAuthorStaff = authorRole == 'staff jashumas' || (isAuthor && isStaff);
+    final latestSubmitAt = _getLatestSubmitAt(approvalHistory);
+    final kasubbagLatestAction = _getLatestActionForRole(
+      approvalHistory,
+      'Kasubbag Jashumas',
+      since: latestSubmitAt,
+    );
     final kasubbagAccepted = kasubbagLatestAction == 'approve';
 
     return Scaffold(
@@ -442,8 +458,8 @@ class _ContentDetailScreenState extends State<ContentDetailScreen> {
               isAuthor,
               isStaff,
               isKasubbag,
-              staffAccepted: staffAccepted,
               kasubbagAccepted: kasubbagAccepted,
+              isAuthorStaff: isAuthorStaff,
             ),
           ],
         ),
@@ -550,8 +566,8 @@ class _ContentDetailScreenState extends State<ContentDetailScreen> {
     bool isAuthor,
     bool isStaff,
     bool isKasubbag, {
-    required bool staffAccepted,
     required bool kasubbagAccepted,
+    required bool isAuthorStaff,
   }) {
     final buttons = <Widget>[];
     final canReview = content.isPending || content.isApproved;
@@ -581,26 +597,6 @@ class _ContentDetailScreenState extends State<ContentDetailScreen> {
       }
     }
 
-    // Staff actions
-    if (isStaff && canReview && !staffAccepted) {
-      buttons.add(
-        _ActionButton(
-          label: 'Accept',
-          icon: Icons.check_circle,
-          color: Colors.green,
-          onPressed: _isLoading ? null : _handleApprove,
-        ),
-      );
-      buttons.add(
-        _ActionButton(
-          label: 'Reject',
-          icon: Icons.cancel,
-          color: Colors.red,
-          onPressed: _isLoading ? null : _handleReject,
-        ),
-      );
-    }
-
     // Kasubbag actions
     if (isKasubbag && canReview && !kasubbagAccepted) {
       buttons.add(
@@ -621,7 +617,27 @@ class _ContentDetailScreenState extends State<ContentDetailScreen> {
       );
     }
 
-    if (isKasubbag && content.isApproved && staffAccepted && kasubbagAccepted) {
+    // Staff actions (hidden if author is staff)
+    if (isStaff && canReview && !isAuthorStaff) {
+      buttons.add(
+        _ActionButton(
+          label: 'Accept',
+          icon: Icons.check_circle,
+          color: Colors.green,
+          onPressed: _isLoading ? null : _handleApprove,
+        ),
+      );
+      buttons.add(
+        _ActionButton(
+          label: 'Reject',
+          icon: Icons.cancel,
+          color: Colors.red,
+          onPressed: _isLoading ? null : _handleReject,
+        ),
+      );
+    }
+
+    if (isKasubbag && content.isApproved && kasubbagAccepted) {
       buttons.add(
         _ActionButton(
           label: 'Publish Konten',

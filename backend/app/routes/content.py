@@ -147,7 +147,16 @@ def update_content(content_id):
         if not excerpt:
             excerpt = body[:200] + '...' if len(body) > 200 else body
         
-        result = content_model.update_content(content_id, title, excerpt, body, category_id, featured_image)
+        reset_status = content['author_id'] == user['id'] and content['status'] != 'draft'
+        result = content_model.update_content(
+            content_id,
+            title,
+            excerpt,
+            body,
+            category_id,
+            featured_image,
+            reset_status=reset_status,
+        )
         
         if result['success']:
             return success_response('Content updated successfully', None, 200)

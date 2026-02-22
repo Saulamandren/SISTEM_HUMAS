@@ -174,7 +174,7 @@ class _ContentFormScreenState extends State<ContentFormScreen> {
                     Expanded(
                       child: Text(
                         isEditMode
-                            ? 'Perbarui konten Anda. Status akan tetap sama.'
+                            ? 'Perbarui konten Anda. Status akan kembali menjadi Draft setelah disimpan.'
                             : 'Konten akan disimpan sebagai Draft. Anda bisa submit untuk review setelah selesai.',
                         style: TextStyle(
                           fontSize: 13,

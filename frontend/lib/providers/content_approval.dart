@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class ContentApproval {
   final int id;
@@ -30,9 +31,7 @@ class ContentApproval {
       approverRole: json['approver_role'] ?? '',
       action: json['action'] ?? '',
       notes: json['notes'],
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'])
-          : DateTime.now(),
+      createdAt: _parseDate(json['created_at']) ?? DateTime.now(),
     );
   }
 
@@ -90,5 +89,26 @@ class ContentApproval {
       default:
         return action.toUpperCase();
     }
+  }
+
+  static DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is num) {
+      final millis =
+          value > 10000000000 ? value.toInt() : (value * 1000).toInt();
+      return DateTime.fromMillisecondsSinceEpoch(millis, isUtc: true);
+    }
+    if (value is String) {
+      final iso = DateTime.tryParse(value);
+      if (iso != null) return iso;
+      try {
+        return DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", 'en_US')
+            .parseUtc(value);
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
   }
 }

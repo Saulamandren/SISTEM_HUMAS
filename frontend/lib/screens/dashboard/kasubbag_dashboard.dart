@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import '../../config/theme.dart';
+import '../user/user_list_screen.dart';
 
 class KasubbagDashboard extends StatelessWidget {
   const KasubbagDashboard({Key? key}) : super(key: key);
@@ -118,8 +119,11 @@ class KasubbagDashboard extends StatelessWidget {
                   'Kelola User',
                   Icons.admin_panel_settings_outlined,
                   () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Fitur akan segera hadir')),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const UserListScreen(),
+                      ),
                     );
                   },
                 ),

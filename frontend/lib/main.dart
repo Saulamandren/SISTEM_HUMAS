@@ -5,6 +5,7 @@ import 'providers/auth_provider.dart';
 import 'providers/category_provider.dart';
 import 'providers/content_provider.dart';
 import 'providers/cooperation_provider.dart';
+import 'providers/user_provider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -31,6 +32,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => CooperationProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => UserProvider(),
         ),
       ],
       child: MaterialApp(

@@ -8,6 +8,7 @@ import '../screens/profile/profile_screen.dart';
 import '../screens/content/content_list_screen.dart';
 import '../screens/category/category_list_screen.dart';
 import '../screens/cooperation/cooperation_list_screen.dart';
+import '../screens/user/user_list_screen.dart';
 
 class Sidebar extends StatelessWidget {
   const Sidebar({Key? key}) : super(key: key);
@@ -213,11 +214,10 @@ class Sidebar extends StatelessWidget {
             subtitle: 'Kelola data pengguna',
             onTap: () {
               Navigator.pop(context);
-              // TODO: Navigate to User Management Screen
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Fitur User Management akan segera hadir'),
-                  duration: Duration(seconds: 2),
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const UserListScreen(),
                 ),
               );
             },
